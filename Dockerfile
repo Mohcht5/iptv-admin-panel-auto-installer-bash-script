@@ -1,12 +1,20 @@
-# استخدم صورة Ubuntu رسمية كأساس
+# استخدام صورة Ubuntu 20.04
 FROM ubuntu:20.04
 
-# تعيين متغيرات البيئة
+# تعيين البيئة الافتراضية لتجنب مطالبة المستخدمين أثناء التثبيت
 ENV DEBIAN_FRONTEND=noninteractive
 
-# تحديث النظام وتثبيت الحزم الأساسية
+# تحديث النظام وتثبيت الأدوات الأساسية
 RUN apt-get update -y && \
-    apt-get install -y wget curl sudo vim && \
+    apt-get install -y software-properties-common wget curl sudo vim && \
+    apt-get clean
+
+# إضافة مستودع PHP إذا كنت بحاجة إلى إصدار PHP حديث
+RUN add-apt-repository ppa:ondrej/php && \
+    apt-get update -y
+
+# تثبيت PHP والحزم الأساسية
+RUN apt-get install -y php7.4 php7.4-cli php7.4-pgsql php7.4-curl php7.4-gd php-pear libjansson-dev libssh2-php libxslt1.1 apache2 && \
     apt-get clean
 
 # تثبيت PostgreSQL
@@ -14,24 +22,19 @@ RUN apt-get update -y && \
     apt-get install -y postgresql postgresql-client && \
     apt-get clean
 
-# تثبيت PHP والحزم ذات الصلة، مع تجنب استخدام php5-fpm لأنه قد يكون غير متوفر
+# إضافة أدوات أخرى مثل unzip و wget
 RUN apt-get update -y && \
-    apt-get install -y php php-cli php-pgsql php-curl php-gd php-pear libjansson-dev libssh2-php libxslt1.1 apache2 && \
+    apt-get install -y unzip && \
     apt-get clean
 
-# تثبيت الحزم الإضافية
-RUN apt-get update -y && \
-    apt-get install -y unzip python3 python3-pip daemontools && \
-    apt-get clean
+# إزالة الملفات المؤقتة
+RUN rm -rf /var/lib/apt/lists/*
 
-# إعداد قاعدة بيانات PostgreSQL
-RUN pg_createcluster 9.3 main --start && \
-    /etc/init.d/postgresql start && \
-    sleep 3
+# نسخ ملف index.php إلى /var/www/html
+COPY index.php /var/www/html/
 
-# فتح المنافذ المطلوبة
-EXPOSE 80 443
+# فتح المنفذ 80
+EXPOSE 80
 
-# بدء الخدمات عند بدء تشغيل الحاوية
-CMD service apache2 start && \
-    /opt/fulliptv/bin/start.sh
+# بدء Apache
+CMD ["apache2ctl", "-D", "FOREGROUND"]
