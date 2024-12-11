@@ -19,9 +19,10 @@ RUN apt-get install -y \
     iputils-ping \
     tzdata  # إضافة الحزمة لتعيين المنطقة الزمنية
 
-# تعيين المنطقة الزمنية إلى إفريقيا/الدار البيضاء
-RUN ln -sf /usr/share/zoneinfo/Africa/Casablanca /etc/localtime && \
-    echo "Africa/Casablanca" > /etc/timezone
+# تعيين المنطقة الزمنية بشكل تلقائي
+ENV TZ=Africa/Casablanca
+RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone
 
 # تنظيف الحزم غير الضرورية لتحسين حجم الصورة
 RUN apt-get clean
