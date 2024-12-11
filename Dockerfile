@@ -16,7 +16,12 @@ RUN apt-get install -y \
     git \
     openssl \
     cron \
-    iputils-ping
+    iputils-ping \
+    tzdata  # إضافة الحزمة لتعيين المنطقة الزمنية
+
+# تعيين المنطقة الزمنية إلى إفريقيا/الدار البيضاء
+RUN ln -sf /usr/share/zoneinfo/Africa/Casablanca /etc/localtime && \
+    echo "Africa/Casablanca" > /etc/timezone
 
 # تنظيف الحزم غير الضرورية لتحسين حجم الصورة
 RUN apt-get clean
