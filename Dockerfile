@@ -1,9 +1,11 @@
-# استخدم Ubuntu كأساس للتثبيت
+# استخدم صورة Ubuntu 20.04 كأساس
 FROM ubuntu:20.04
 
-# تثبيت المتطلبات الأساسية
-RUN apt-get update && \
-    apt-get install -y \
+# تحديث الحزم أولاً للتأكد من الحصول على أحدث النسخ
+RUN apt-get update && apt-get upgrade -y
+
+# تثبيت الحزم المطلوبة
+RUN apt-get install -y \
     apache2 \
     mysql-server \
     php \
@@ -15,26 +17,22 @@ RUN apt-get update && \
     openssl \
     cron \
     tput \
-    iputils-ping \
-    && apt-get clean
+    iputils-ping
 
-# إعداد بيئة العمل
-ENV LANG en_US.UTF-8
+# تنظيف الحزم غير الضرورية لتحسين حجم الصورة
+RUN apt-get clean
 
-# نسخ سكربت التثبيت إلى الحاوية
+# نسخ السكربت إلى الحاوية
 COPY install-script.sh /install-script.sh
 
 # إعطاء صلاحيات تنفيذ للسكريبت
 RUN chmod +x /install-script.sh
 
-# تغيير المسار الحالي إلى الدليل الذي يحتوي على السكربت
-WORKDIR /
-
 # تنفيذ السكربت
-RUN ./install-script.sh
+RUN /install-script.sh
 
-# فتح المنفذ 80 و 3306 للخوادم
-EXPOSE 80 3306
+# فتح البورتات اللازمة
+EXPOSE 80 443
 
-# بدء Apache و MySQL و Cron
-CMD service apache2 start && service mysql start && cron && tail -f /dev/null
+# تعيين أمر بدء الحاوية (اختياري)
+CMD ["apache2ctl", "-D", "FOREGROUND"]
