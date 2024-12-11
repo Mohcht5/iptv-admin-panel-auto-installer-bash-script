@@ -1,46 +1,70 @@
-# استخدم صورة Ubuntu كأساس
+# Use an official Ubuntu as a parent image
 FROM ubuntu:20.04
 
-# تعيين بعض المتغيرات البيئية
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Africa/Casablanca
+ENV CMSVER='2.0'
+ENV LANG="en_US.UTF-8"
 
-# تحديث الحزم أولاً
-RUN apt-get update && apt-get upgrade -y
-
-# تثبيت الحزم المطلوبة
-RUN apt-get install -y \
-    apache2 \
-    mysql-server \
-    php \
-    php-mysql \
+# Install essential dependencies
+RUN apt-get update -y && \
+    apt-get install -y \
+    postgresql \
+    unzip \
     wget \
     curl \
-    unzip \
-    git \
-    openssl \
-    cron \
-    iputils-ping \
-    tzdata
+    vim \
+    sudo \
+    python3 \
+    python3-pip \
+    php \
+    php-cli \
+    php-pgsql \
+    php-curl \
+    php-gd \
+    php-pear \
+    php5-fpm \
+    libjansson-dev \
+    libssh2-php \
+    libxslt1.1 \
+    daemontools \
+    apache2 \
+    postgresql-client \
+    && apt-get clean
 
-# تكوين المنطقة الزمنية بشكل غير تفاعلي
-RUN ln -fs /usr/share/zoneinfo/Africa/Casablanca /etc/localtime && \
-    dpkg-reconfigure --frontend noninteractive tzdata
+# Install FullIPTV dependencies
+RUN wget https://bitbucket.org/karim2009/fulliptv-v4/downloads/ioncube.zip && \
+    unzip ioncube.zip -d /opt && \
+    chmod 777 /opt/fulliptv && \
+    chmod 777 /opt/fulliptv/lib && \
+    chmod 777 /opt/fulliptv/lib/ioncube && \
+    rm ioncube.zip
 
-# تنظيف الحزم غير الضرورية لتحسين حجم الصورة
-RUN apt-get clean
+# Set up PostgreSQL database
+RUN pg_createcluster 9.3 main --start && \
+    /etc/init.d/postgresql start && \
+    sleep 3
 
-# نسخ السكربت إلى الحاوية
-COPY install-script.sh /install-script.sh
+# Install additional system tweaks and libraries
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    dpkg --remove-architecture i386 >> /dev/null 2>&1 && \
+    echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf && \
+    echo "fs.file-max = 32768" >> /etc/sysctl.conf && \
+    sysctl -p >> /dev/null 2>&1
 
-# إعطاء صلاحيات تنفيذ للسكريبت
-RUN chmod +x /install-script.sh
+# Add FullIPTV configuration files
+RUN mkdir -p /opt/fulliptv/etc/ && \
+    echo "CMSURL=$CMSURL" > /opt/fulliptv/etc/fulliptv.conf && \
+    echo "CMSPORT=$CMSPORT" >> /opt/fulliptv/etc/fulliptv.conf && \
+    echo "SERVERNAME=$SERVERNAME" >> /opt/fulliptv/etc/fulliptv.conf && \
+    echo "SERVERIP=$SERVERIP" >> /opt/fulliptv/etc/fulliptv.conf && \
+    echo "SERVERINTIP=$SERVERINTIP" >> /opt/fulliptv/etc/fulliptv.conf && \
+    echo "ISCMS=$ISCMS" >> /opt/fulliptv/etc/fulliptv.conf && \
+    echo "ISSTREAMER=$ISSTREAMER" >> /opt/fulliptv/etc/fulliptv.conf
 
-# تنفيذ السكربت
-RUN /install-script.sh
-
-# فتح البورتات اللازمة
+# Expose necessary ports
 EXPOSE 80 443
 
-# تعيين أمر بدء الحاوية (اختياري)
-CMD ["apache2ctl", "-D", "FOREGROUND"]
+# Start services on container start
+CMD service apache2 start && \
+    /opt/fulliptv/bin/start.sh
