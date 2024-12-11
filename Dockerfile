@@ -1,10 +1,14 @@
-# استخدم صورة Ubuntu 20.04 كأساس
+# استخدم صورة Ubuntu كأساس
 FROM ubuntu:20.04
 
-# تحديث الحزم أولاً للتأكد من الحصول على أحدث النسخ
+# تعيين بعض المتغيرات البيئية
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Africa/Casablanca
+
+# تحديث الحزم أولاً
 RUN apt-get update && apt-get upgrade -y
 
-# تثبيت الحزم المطلوبة مع إزالة "tput"
+# تثبيت الحزم المطلوبة
 RUN apt-get install -y \
     apache2 \
     mysql-server \
@@ -17,12 +21,11 @@ RUN apt-get install -y \
     openssl \
     cron \
     iputils-ping \
-    tzdata  # إضافة الحزمة لتعيين المنطقة الزمنية
+    tzdata
 
-# تعيين المنطقة الزمنية بشكل تلقائي
-ENV TZ=Africa/Casablanca
-RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && \
-    echo $TZ > /etc/timezone
+# تكوين المنطقة الزمنية بشكل غير تفاعلي
+RUN ln -fs /usr/share/zoneinfo/Africa/Casablanca /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata
 
 # تنظيف الحزم غير الضرورية لتحسين حجم الصورة
 RUN apt-get clean
