@@ -4,7 +4,7 @@ FROM ubuntu:20.04
 # تحديث الحزم أولاً للتأكد من الحصول على أحدث النسخ
 RUN apt-get update && apt-get upgrade -y
 
-# تثبيت الحزم المطلوبة
+# تثبيت الحزم المطلوبة مع إزالة "tput"
 RUN apt-get install -y \
     apache2 \
     mysql-server \
@@ -16,7 +16,6 @@ RUN apt-get install -y \
     git \
     openssl \
     cron \
-    tput \
     iputils-ping
 
 # تنظيف الحزم غير الضرورية لتحسين حجم الصورة
